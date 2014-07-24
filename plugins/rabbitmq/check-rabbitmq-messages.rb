@@ -47,6 +47,11 @@ class CheckRabbitMQMessages < Sensu::Plugin::Check::CLI
     :short => '-i QUEUE_NAME[,QUEUE_NAME]',
     :long => '--ignore QUEUE_NAME[,QUEUE_NAME]'
 
+  option :only,
+    :description => 'A comma-separated list of Queues to check',
+    :short => '-o QUEUE_NAME[,QUEUE_NAME]',
+    :long => '--only QUEUE_NAME[,QUEUE_NAME]'
+
   option :warn,
     :short => '-w NUM_MESSAGES',
     :long => '--warn NUM_MESSAGES',
@@ -76,7 +81,13 @@ class CheckRabbitMQMessages < Sensu::Plugin::Check::CLI
 
   def run
     queues = {}
-    if config[:ignore]
+    if config[:only]
+      items = config[:only].split(',')
+      rabbitmq.queues.each do |q|
+        next unless items.include?(q['name'])
+        queues[q['name']] = q['messages'] || 0
+      end
+    elsif config[:ignore]
       items = config[:ignore].split(',')
       rabbitmq.queues.each do |q|
         next if items.include?(q['name'])
